@@ -7,7 +7,13 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNet.WebApi.Core" Version="5.2.7" />
+	  <Compile Remove="Data - Copy\**" />
+	  <Content Remove="Data - Copy\**" />
+	  <EmbeddedResource Remove="Data - Copy\**" />
+	  <None Remove="Data - Copy\**" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="6.0.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
 	</ItemGroup>

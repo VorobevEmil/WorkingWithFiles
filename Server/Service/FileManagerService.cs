@@ -1,43 +1,58 @@
-﻿using WorkingWithFiles.Shared;
+﻿using WorkingWithFiles.Shared.Model;
 
 namespace WorkingWithFiles.Server.Service
 {
     public class FileManagerService
     {
-        public Dictionary<string, List<string>> GetFiles(string path)
+        public List<FileModel> GetFiles(string path)
         {
-            path = Cripto.EncodeDecrypt(path);
+            //path = Cripto.EncodeDecrypt(path);
             DirectoryInfo dir = new DirectoryInfo(path);
 
-
-            Dictionary<string, List<string>> typeAll = new Dictionary<string, List<string>>();
+            List<FileModel> filesList = new List<FileModel>();
 
             try
             {
-
-                foreach (var directory in dir.GetDirectories())
+                foreach (var files in dir.GetFiles())
                 {
-                    if (!typeAll.ContainsKey("directory"))
-                        typeAll["directory"] = new List<string>();
-
-                    typeAll["directory"].Add(directory.FullName);
-                }
-
-                foreach (var file in dir.GetFiles())
-                {
-                    if (!typeAll.ContainsKey("file"))
-                        typeAll["file"] = new List<string>();
-
-                    typeAll["file"].Add(file.FullName);
+                    filesList.Add(new FileModel(files.Name, files.FullName));
                 }
             }
-
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine("Не удалось открыть файл: " + ex.Message);
             }
 
-            return typeAll;
+            return filesList;
+        }
+
+        public void DeleteFile(FileModel fileModel)
+        {
+            if (File.Exists(fileModel.FullName))
+            {
+                File.Delete(fileModel.FullName);
+            }
+        }
+
+        public void UploadFile(UploadedFile uploadedFile)
+        {
+            var filePath = "Data\\";
+
+            if (uploadedFile.FileContent.Length == default)
+            {
+                throw new Exception("Файл пуст");
+            }
+
+            if (!File.Exists(filePath + uploadedFile.FileName))
+            {
+                throw new Exception("Файл уже существует, сначала удалите предыдущую версию");
+            }
+            else
+            {
+                var fs = File.Create(filePath + uploadedFile.FileName);
+                fs.Write(uploadedFile.FileContent, 0, uploadedFile.FileContent.Length);
+                fs.Close();
+            }
         }
     }
 }
