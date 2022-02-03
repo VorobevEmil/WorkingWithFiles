@@ -1,0 +1,57 @@
+﻿@page "/"
+@inject HttpClient Http
+@using System.Security.Cryptography
+@using System.Text
+@using WorkingWithFiles.Shared;
+
+@if (allType == null)
+{
+    <span>Loading</span>
+}
+else
+{
+    @foreach (var type in allType)
+    {
+        foreach (var path in type.Value)
+        {
+            <MudGrid>
+                <MudItem>
+                    <MudButton Variant="Variant.Text" StartIcon="@Icons.Filled.InsertDriveFile" IconColor="Color.Default" Size="Size.Large">@path.Split('\\')[^1]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary">Удалить</MudButton>
+                </MudItem>
+            </MudGrid>
+        }
+    }
+}
+
+
+@code {
+    private Dictionary<string, List<string>>? allType;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var path = Cripto.EncodeDecrypt("/");
+
+
+        allType = await Http.GetFromJsonAsync<Dictionary<string, List<string>>>($"api/Quality/GetFiles/{path}");
+
+    }
+
+    /// <summary>
+    /// Перейти по папке
+    /// </summary>
+    /// <param name="path"></param>
+    private async Task FollowThePath(string path)
+    {
+        path = Cripto.EncodeDecrypt(path);
+
+        allType = await Http.GetFromJsonAsync<Dictionary<string, List<string>>>($"api/Quality/GetFiles/{path}");
+    }
+
+    private async Task DownloadFile(string path)
+    {
+        path = Cripto.EncodeDecrypt(path);
+
+        allType = await Http.GetFromJsonAsync<Dictionary<string, List<string>>>($"api/Quality/DownloadFile/{path}");
+    }
+}
