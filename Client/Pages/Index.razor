@@ -41,7 +41,7 @@
 
         <MudButton HtmlTag="label" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Filled.CloudUpload" for="fileInput" Disabled="isDisabled">Загрузить файлы</MudButton>
 
-        <MudButton OnClick="DeleteFile" Variant="Variant.Filled" StartIcon="@Icons.Filled.Delete" Color="Color.Secondary" Size="Size.Medium" Disabled="isDisabled">Удалить файлы</MudButton>
+        <MudButton OnClick="DeleteFile" Variant="Variant.Filled" StartIcon="@Icons.Filled.Delete" Color="Color.Secondary" Size="Size.Medium" Disabled="(isDisabled || selectedFiles.Count == 0)">Удалить файлы</MudButton>
     </div>
 </div>
 
