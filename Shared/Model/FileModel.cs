@@ -10,10 +10,5 @@ namespace WorkingWithFiles.Shared.Model
     {
         public string? FileName { get; set; }
         public string? FullName { get; set; }
-        public FileModel(string filename, string fullname)
-        {
-            FileName = filename;
-            FullName = fullname;
-        }
     }
 }

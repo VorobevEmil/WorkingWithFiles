@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Mvc;
+using System.Net.Http.Headers;
 using WorkingWithFiles.Server.Service;
 using WorkingWithFiles.Shared.Model;
 
@@ -38,26 +39,18 @@ namespace WorkingWithFiles.Server.Controllers
             }
         }
 
-        [HttpPost("UploadFiles")]
-        public IActionResult UploadFiles(List<UploadedFile> uploadedFiles)
+        [HttpPost("UploadFile")]
+        public async Task<IActionResult> UploadFile([FromBody] SaveFile saveFile)
         {
-            string badRequest = string.Empty;
-            foreach (var uploadedFile in uploadedFiles)
+            var fileExists = await _service.UploadFile(saveFile);
+            if (fileExists.Count == 0)
             {
-                try
-                {
-                    _service.UploadFile(uploadedFile);
-                }
-                catch (Exception ex)
-                {
-                    badRequest += ex.Message + "\n";
-                }
+                return Ok();
             }
-
-            if (string.IsNullOrEmpty(badRequest))
-                return Ok("Файлы загружены");
             else
-                return BadRequest(badRequest);
+            {
+                return Conflict("Файлы: " + string.Join(" ", fileExists) + " уже существуют в каталоге, сначала удалите предыдущие версии");
+            }
         }
     }
 }

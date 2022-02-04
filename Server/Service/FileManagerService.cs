@@ -15,7 +15,11 @@ namespace WorkingWithFiles.Server.Service
             {
                 foreach (var files in dir.GetFiles())
                 {
-                    filesList.Add(new FileModel(files.Name, files.FullName));
+                    filesList.Add(new FileModel
+                    {
+                        FileName = files.Name,
+                        FullName = files.FullName
+                    });
                 }
             }
             catch (Exception ex)
@@ -34,25 +38,24 @@ namespace WorkingWithFiles.Server.Service
             }
         }
 
-        public void UploadFile(UploadedFile uploadedFile)
+        public async Task<List<string?>> UploadFile(SaveFile saveFile)
         {
-            var filePath = "Data\\";
-
-            if (uploadedFile.FileContent.Length == default)
+            List<string?> fileExists = new List<string?>();
+            foreach (var file in saveFile.Files)
             {
-                throw new Exception("Файл пуст");
+                if (File.Exists($"Data\\{file.FileName}"))
+                {
+                    fileExists.Add(file.FileName);
+                }
+                else
+                {
+                    using (var fileStream = File.Create($"Data\\{file.FileName}"))
+                    {
+                        await fileStream.WriteAsync(file.Data);
+                    }
+                }
             }
-
-            if (!File.Exists(filePath + uploadedFile.FileName))
-            {
-                throw new Exception("Файл уже существует, сначала удалите предыдущую версию");
-            }
-            else
-            {
-                var fs = File.Create(filePath + uploadedFile.FileName);
-                fs.Write(uploadedFile.FileContent, 0, uploadedFile.FileContent.Length);
-                fs.Close();
-            }
+            return fileExists;
         }
     }
 }

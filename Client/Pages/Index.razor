@@ -33,17 +33,11 @@
     <MudSwitch @bind-Checked="@bordered" Color="Color.Warning">Bordered</MudSwitch>
     <MudSpacer />
     <div style="min-width:200px;">
-        <InputFile id="fileInput" OnChange="UploadFiles" hidden multiple />
+        <InputFile id="fileInput" OnChange="OnFileSelection" hidden multiple />
 
-        <MudButton HtmlTag="label"
-                   Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   StartIcon="@Icons.Filled.CloudUpload"
-                   for="fileInput">
-            Загрузить файл
-        </MudButton>
+        <MudButton HtmlTag="label" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Filled.CloudUpload" for="fileInput" Disabled="isDisabled">Загрузить файлы</MudButton>
 
-        <MudButton OnClick="DeleteFile" Variant="Variant.Filled" StartIcon="@Icons.Filled.Delete" Color="Color.Secondary" Size="Size.Medium">Удалить файлы</MudButton>
+        <MudButton OnClick="DeleteFile" Variant="Variant.Filled" StartIcon="@Icons.Filled.Delete" Color="Color.Secondary" Size="Size.Medium" Disabled="isDisabled">Удалить файлы</MudButton>
     </div>
 </div>
 
@@ -58,13 +52,15 @@
     </MudText>
 </div>
 
-@if (isDelete)
+@if (!string.IsNullOrWhiteSpace(message))
 {
-    <MudAlert Severity="Severity.Error" Variant="Variant.Filled">Файлы удалены</MudAlert>
+    <MudAlert Severity="Severity.Error" Variant="Variant.Filled">@message</MudAlert>
 }
 
 @code {
-    private bool isDelete = false;
+    private string message = string.Empty;
+    private bool isDisabled = false;
+
     private bool loading = true;
     private bool dense = false;
     private bool hover = true;
@@ -87,6 +83,7 @@
         Files = await httpClient.GetFromJsonAsync<List<FileModel>>("api/Quality/GetFiles/Data");
 
         loading = false;
+        isDisabled = false;
     }
 
 
@@ -103,6 +100,7 @@
 
     private async Task DeleteFile()
     {
+        isDisabled = true;
         loading = true;
 
         foreach (var file in selectedFiles)
@@ -115,29 +113,62 @@
         await LoadFiles();
     }
 
-    private async Task UploadFiles(InputFileChangeEventArgs e)
+
+    List<FileData> fileData = new List<FileData>();
+    private async Task OnFileSelection(InputFileChangeEventArgs e)
     {
+        isDisabled = true;
         loading = true;
-
-        var uploadedFiles = new List<UploadedFile>();
-        foreach (var file in e.GetMultipleFiles())
+        try
         {
-            Stream stream = file.OpenReadStream();
-            MemoryStream ms = new MemoryStream();
-            await stream.CopyToAsync(ms);
-            stream.Close();
+            foreach (IBrowserFile imgFile in e.GetMultipleFiles())
+            {
 
+                var buffers = new byte[imgFile.Size];
 
-            UploadedFile uploadedFile = new UploadedFile();
-            uploadedFile.FileName = file.Name;
-            uploadedFile.FileContent = ms.ToArray();
-            ms.Close();
+                await imgFile.OpenReadStream().ReadAsync(buffers);
 
-            uploadedFiles.Add(uploadedFile);
+                fileData.Add(new FileData
+                    {
+                        Data = buffers,
+                        FileName = imgFile.Name
+                    });
+            }
+            await SaveToServer();
 
         }
-        await httpClient.PostAsJsonAsync<List<UploadedFile>>("api/Quality/UploadFiles", uploadedFiles);
+        catch (IOException)
+        {
+            await SetErrorMessage("Превышен максимальный размер файла");
+        }
+        catch (Exception)
+        {
+            await SetErrorMessage("Не удалось загрузить файл");
+        }
 
         await LoadFiles();
+    }
+
+    private async Task SaveToServer()
+    {
+        if (fileData.Count > 0)
+        {
+            var payload = new SaveFile { Files = fileData };
+            var response = await httpClient.PostAsJsonAsync("api/Quality/UploadFile", payload);
+
+            if(response.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                message = await response.Content.ReadAsStringAsync(); 
+            }
+
+            fileData.Clear();
+        }
+    }
+
+    private async Task SetErrorMessage(string m)
+    {
+        message = m;
+        await Task.Delay(2000);
+        message = string.Empty;
     }
 }
