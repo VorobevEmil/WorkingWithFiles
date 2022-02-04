@@ -9,6 +9,6 @@ namespace WorkingWithFiles.Shared.Model
     public class FileModel
     {
         public string? FileName { get; set; }
-        public string? FullName { get; set; }
+        public string? FullPath { get; set; }
     }
 }

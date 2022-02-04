@@ -8,6 +8,7 @@ namespace WorkingWithFiles.Shared
 {
     public class Cripto
     {
+        // Метод шифрует и расшифровывает путь к файлу
         public static string EncodeDecrypt(string str, ushort secretKey = 0x0088)
         {
             var ch = str.ToArray(); //преобразуем строку в символы
@@ -17,7 +18,7 @@ namespace WorkingWithFiles.Shared
             return newStr;
         }
 
-        public static char TopSecret(char character, ushort secretKey = 0x0088)
+        private static char TopSecret(char character, ushort secretKey = 0x0088)
         {
             character = (char)(character ^ secretKey); //Производим XOR операцию
             return character;
