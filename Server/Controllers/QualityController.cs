@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
 using WorkingWithFiles.Server.Service;
+using WorkingWithFiles.Shared;
 using WorkingWithFiles.Shared.Model;
 
 namespace WorkingWithFiles.Server.Controllers
@@ -52,5 +53,26 @@ namespace WorkingWithFiles.Server.Controllers
                 return Conflict("Файлы: " + string.Join(" ", fileExists) + " уже существуют в каталоге, сначала удалите предыдущие версии");
             }
         }
+
+        [HttpGet("DownloadFile/{path}")]
+        public async Task<IActionResult> DownloadFile(string path)
+        {
+            try
+            {
+                path = Cripto.EncodeDecrypt(path);
+
+                var bytes = await System.IO.File.ReadAllBytesAsync(path);
+                return File(bytes, "text/plain", Path.GetFileName(path));
+            }
+            catch (FileNotFoundException)
+            {
+                return BadRequest("Файл не найден");
+            }
+            catch (Exception)
+            {
+                return BadRequest("Не удалось скачать файл");
+            }
+        }
+
     }
 }

@@ -1,5 +1,8 @@
 ﻿@page "/"
 @inject HttpClient httpClient
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
 @using System.Security.Cryptography
 @using System.Text
 @using WorkingWithFiles.Shared
@@ -7,7 +10,7 @@
 @using WorkingWithFiles.Shared.Model
 
 
-<MudTable Items="@Files" Loading="@loading" Dense="@dense" Hover="@hover" Bordered="@bordered" Striped="@striped" Filter="new Func<FileModel,bool>(FilterFunc)" MultiSelection="true" @bind-SelectedItems="selectedFiles">
+<MudTable Items="@Files" Loading="@loading" Hover="true" Filter="new Func<FileModel,bool>(FilterFunc)" MultiSelection="true" @bind-SelectedItems="selectedFiles">
     <ToolBarContent>
         <MudText Typo="Typo.h6">Работа с файлами</MudText>
         <MudSpacer />
@@ -15,10 +18,15 @@
     </ToolBarContent>
     <HeaderContent>
         <MudTh>Название файла</MudTh>
+        <MudTh></MudTh>
     </HeaderContent>
     <RowTemplate>
 
         <MudTd DataLabel="FileName">@context.FileName</MudTd>
+
+        <MudTd Class="d-flex justify-end">
+            <MudButton OnClick="(() => DownloadFile(context))" Variant="Variant.Filled" StartIcon="@Icons.Filled.Download" Color="Color.Success" Size="Size.Small" Disabled="isDisabled">Скачать файл</MudButton>
+        </MudTd>
 
     </RowTemplate>
     <PagerContent>
@@ -27,10 +35,6 @@
 </MudTable>
 
 <div class="d-flex flex-wrap mt-4">
-    <MudSwitch @bind-Checked="@hover" Color="Color.Primary">Hover</MudSwitch>
-    <MudSwitch @bind-Checked="@dense" Color="Color.Secondary">Dense</MudSwitch>
-    <MudSwitch @bind-Checked="@striped" Color="Color.Tertiary">Striped</MudSwitch>
-    <MudSwitch @bind-Checked="@bordered" Color="Color.Warning">Bordered</MudSwitch>
     <MudSpacer />
     <div style="min-width:200px;">
         <InputFile id="fileInput" OnChange="OnFileSelection" hidden multiple />
@@ -52,20 +56,10 @@
     </MudText>
 </div>
 
-@if (!string.IsNullOrWhiteSpace(message))
-{
-    <MudAlert Severity="Severity.Error" Variant="Variant.Filled">@message</MudAlert>
-}
-
 @code {
-    private string message = string.Empty;
     private bool isDisabled = false;
-
     private bool loading = true;
-    private bool dense = false;
-    private bool hover = true;
-    private bool striped = false;
-    private bool bordered = false;
+
     private string searchString = string.Empty;
     private HashSet<FileModel> selectedFiles = new HashSet<FileModel>();
 
@@ -98,19 +92,29 @@
         return false;
     }
 
+    [Inject] private IDialogService DialogService { get; set; }
+
     private async Task DeleteFile()
     {
-        isDisabled = true;
-        loading = true;
+        bool? result = await DialogService.ShowMessageBox(
+            "Внимание",
+            "Вы действительно хотите удалить эти файлы? Этот процесс нельзя отменить.",
+            yesText: "Удалить!", cancelText: "Отмена");
 
-        foreach (var file in selectedFiles)
+        if (result == true)
         {
-            await httpClient.PostAsJsonAsync("api/Quality/DeleteFile", file);
+            isDisabled = true;
+            loading = true;
+
+            foreach (var file in selectedFiles)
+            {
+                await httpClient.PostAsJsonAsync("api/Quality/DeleteFile", file);
+            }
+
+            selectedFiles.Clear();
+            await LoadFiles();
         }
 
-        selectedFiles.Clear();
-
-        await LoadFiles();
     }
 
 
@@ -139,11 +143,11 @@
         }
         catch (IOException)
         {
-            await SetErrorMessage("Превышен максимальный размер файла");
+            Snackbar.Add("Превышен максимальный размер файла", Severity.Warning);
         }
         catch (Exception)
         {
-            await SetErrorMessage("Не удалось загрузить файл");
+            Snackbar.Add("Не удалось загрузить файл", Severity.Warning);
         }
 
         await LoadFiles();
@@ -153,22 +157,21 @@
     {
         if (fileData.Count > 0)
         {
+
             var payload = new SaveFile { Files = fileData };
             var response = await httpClient.PostAsJsonAsync("api/Quality/UploadFile", payload);
 
-            if(response.StatusCode == System.Net.HttpStatusCode.Conflict)
+            if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
             {
-                message = await response.Content.ReadAsStringAsync(); 
+                Snackbar.Add(await response.Content.ReadAsStringAsync(), Severity.Warning);
             }
 
             fileData.Clear();
         }
     }
 
-    private async Task SetErrorMessage(string m)
+    private async Task DownloadFile(FileModel file)
     {
-        message = m;
-        await Task.Delay(2000);
-        message = string.Empty;
+        await JSRuntime.InvokeAsync<string>("open", $"api/Quality/DownloadFile/{Cripto.EncodeDecrypt(file.FullName)}", "_blank");
     }
 }

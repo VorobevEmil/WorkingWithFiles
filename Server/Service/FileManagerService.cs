@@ -1,4 +1,5 @@
-﻿using WorkingWithFiles.Shared.Model;
+﻿using WorkingWithFiles.Shared;
+using WorkingWithFiles.Shared.Model;
 
 namespace WorkingWithFiles.Server.Service
 {
