@@ -130,7 +130,7 @@
 
                 var buffers = new byte[imgFile.Size];
 
-                await imgFile.OpenReadStream().ReadAsync(buffers);
+                await imgFile.OpenReadStream(51200000).ReadAsync(buffers);
 
                 fileData.Add(new FileData
                     {
