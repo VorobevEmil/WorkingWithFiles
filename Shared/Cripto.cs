@@ -9,7 +9,7 @@ namespace WorkingWithFiles.Shared
     public class Cripto
     {
         // Метод шифрует и расшифровывает путь к файлу
-        public static string EncodeDecrypt(string str, ushort secretKey = 0x0088)
+        public static string EncodeDecrypt(string? str, ushort secretKey = 0x0088)
         {
             var ch = str.ToArray(); //преобразуем строку в символы
             string newStr = "";      //переменная которая будет содержать зашифрованную строку

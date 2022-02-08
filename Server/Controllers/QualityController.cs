@@ -20,7 +20,7 @@ namespace WorkingWithFiles.Server.Controllers
 
 
         /// <summary>
-        /// Получить все файлы с папки
+        /// Получить все файлы
         /// </summary>
         [HttpGet("GetFiles/{path}")]
         public ActionResult<List<FileModel>> GetFiles(string path)
@@ -30,7 +30,7 @@ namespace WorkingWithFiles.Server.Controllers
 
 
         /// <summary>
-        /// Удалить файл
+        /// Удалить файлы
         /// </summary>
         [HttpPost("DeleteFile")]
         public IActionResult DeleteFile(FileModel file)
@@ -48,12 +48,12 @@ namespace WorkingWithFiles.Server.Controllers
 
 
         /// <summary>
-        /// Загрузить файлы на сервер
+        /// Загрузить файлы
         /// </summary>
         [RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = int.MaxValue)]
         [DisableRequestSizeLimit]
         [HttpPost("UploadFiles/{path}")]
-        public async Task<IActionResult> UploadFiles(string path, [FromBody] SaveFile saveFile)
+        public async Task<IActionResult> UploadFiles(string path, [FromBody] List<FileData> saveFile)
         {
             var fileExists = await _service.UploadFiles(path, saveFile);
             if (fileExists.Count == 0)
@@ -74,7 +74,6 @@ namespace WorkingWithFiles.Server.Controllers
         {
             try
             {
-                // Расшифровывает путь
                 path = Cripto.EncodeDecrypt(path);
 
                 var bytes = await System.IO.File.ReadAllBytesAsync(path);

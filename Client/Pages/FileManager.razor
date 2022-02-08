@@ -12,7 +12,7 @@
 @using WorkingWithFiles.Shared.Model
 
 
-<MudTable Items="@Files" Loading="@loading" Hover="true" Filter="new Func<FileModel,bool>(FilterFunc)" MultiSelection="true" @bind-SelectedItems="selectedFiles">
+<MudTable Items="@Files" Hover="true" Filter="new Func<FileModel,bool>(FilterFunc)" MultiSelection="true" @bind-SelectedItems="selectedFiles">
     <ToolBarContent>
         <MudText Typo="Typo.h6">Работа с файлами</MudText>
         <MudSpacer />
@@ -60,7 +60,6 @@
 
 @code {
     private bool isDisabled = false;
-    private bool loading = true;
 
     private string searchString = string.Empty;
     private HashSet<FileModel> selectedFiles = new HashSet<FileModel>();
@@ -73,18 +72,15 @@
     }
 
     /// <summary>
-    /// Загрузка всех файлов из папки Data
+    /// Загрузка всех файлов
     /// </summary>
     private async Task LoadFiles()
     {
-        loading = true;
-
-
-        string path = Cripto.EncodeDecrypt("Data");
+        string path = PathSelect.FOLDER_PATH;
+        path = Cripto.EncodeDecrypt(path);
 
         Files = await httpClient.GetFromJsonAsync<List<FileModel>>($"api/Quality/GetFiles/{path}");
 
-        loading = false;
         isDisabled = false;
     }
 
@@ -116,7 +112,6 @@
         if (result == true)
         {
             isDisabled = true;
-            loading = true;
 
             foreach (var file in selectedFiles)
             {
@@ -130,23 +125,22 @@
     }
 
 
-    List<FileData> fileData = new List<FileData>();
 
     /// <summary>
-    /// Сохраняет на сервере файл
+    /// Сохранение файлов на сервер
     /// </summary>
     private async Task OnFileSelection(InputFileChangeEventArgs e)
     {
         long maxFileSize = 1024 * 1024 * 50;
         isDisabled = true;
-        loading = true;
         try
         {
+            List<FileData> fileData = new List<FileData>();
             var unsuitableType = new List<string>();
             foreach (IBrowserFile file in e.GetMultipleFiles())
             {
                 var acceptFormat = new string[] { "application/msword", "application/vnd.ms-excel", "application/vnd.ms-powerpoint", "text/plain", "application/pdf" };
-                if (file.Name.Split('.')[^1] == "docx" || file.ContentType.Split('/')[0] == "images" || acceptFormat.Contains(file.ContentType))
+                if (file.Name.Split('.')[^1] == "docx" || file.ContentType.Split('/')[0] == "image" || acceptFormat.Contains(file.ContentType))
                 {
 
                     var buffers = new byte[file.Size];
@@ -164,7 +158,7 @@
                     unsuitableType.Add(file.Name);
                 }
             }
-            await SaveToServer();
+            await SaveToServer(fileData);
 
             if (unsuitableType.Count > 0)
             {
@@ -185,20 +179,20 @@
     }
 
 
-    private async Task SaveToServer()
+    private async Task SaveToServer(List<FileData> fileData)
     {
         if (fileData.Count > 0)
         {
 
-            var payload = new SaveFile { Files = fileData };
-            var response = await httpClient.PostAsJsonAsync($"api/Quality/UploadFiles/{Cripto.EncodeDecrypt("Data")}", payload);
+            string path = PathSelect.FOLDER_PATH;
+            path = Cripto.EncodeDecrypt(path);
+
+            var response = await httpClient.PostAsJsonAsync($"api/Quality/UploadFiles/{path}", fileData);
 
             if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
             {
                 Snackbar.Add(await response.Content.ReadAsStringAsync(), Severity.Warning);
             }
-
-            fileData.Clear();
         }
     }
 
@@ -207,6 +201,7 @@
     /// </summary>
     private async Task DownloadFile(FileModel file)
     {
-        await JSRuntime.InvokeAsync<string>("open", $"api/Quality/DownloadFile/{Cripto.EncodeDecrypt(file.FullPath)}", "_blank");
+        string path = Cripto.EncodeDecrypt(file.FullPath);
+        await JSRuntime.InvokeAsync<string>("open", $"api/Quality/DownloadFile/{path}", "_blank");
     }
 }
