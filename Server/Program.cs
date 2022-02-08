@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using WorkingWithFiles.Server.Service;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +14,23 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddTransient<FileManagerService>();
+
+// If using IIS
+builder.Services.Configure<IISServerOptions>(options =>
+{
+    options.MaxRequestBodySize = int.MaxValue;
+});
+// If using Kestrel
+builder.Services.Configure<KestrelServerOptions>(options =>
+{
+    options.Limits.MaxRequestBodySize = int.MaxValue;
+});
+builder.Services.Configure<FormOptions>(x =>
+{
+    x.ValueLengthLimit = int.MaxValue;
+    x.MultipartBodyLengthLimit = int.MaxValue;
+    x.MultipartHeadersLengthLimit = int.MaxValue;
+});
 
 var app = builder.Build();
 
@@ -42,16 +60,5 @@ app.UseRouting();
 app.MapRazorPages();
 app.MapControllers();
 app.MapFallbackToFile("index.html");
-
-app.Use(async (context, next) =>
-{
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-    context.Features.Get<IHttpMaxRequestBodySizeFeature>()
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-        .MaxRequestBodySize = null;
-
-    await next.Invoke();
-});
-
 
 app.Run();

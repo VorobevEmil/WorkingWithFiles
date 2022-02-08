@@ -50,7 +50,6 @@ namespace WorkingWithFiles.Server.Controllers
         /// <summary>
         /// Загрузить файлы на сервер
         /// </summary>
-        [RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = int.MaxValue)]
         [HttpPost("UploadFiles/{path}")]
         public async Task<IActionResult> UploadFiles(string path, [FromBody] SaveFile saveFile)
         {
