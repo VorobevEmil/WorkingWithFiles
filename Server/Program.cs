@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.ResponseCompression;
+﻿using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.ResponseCompression;
 using WorkingWithFiles.Server.Service;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,5 +42,16 @@ app.UseRouting();
 app.MapRazorPages();
 app.MapControllers();
 app.MapFallbackToFile("index.html");
+
+app.Use(async (context, next) =>
+{
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+    context.Features.Get<IHttpMaxRequestBodySizeFeature>()
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+        .MaxRequestBodySize = null;
+
+    await next.Invoke();
+});
+
 
 app.Run();
