@@ -8,20 +8,16 @@ namespace WorkingWithFiles.Server.Service
         /// <summary>
         /// Получить все файлы с папки
         /// </summary>
-        public List<FileModel> GetFiles()
+        public List<string> GetFiles()
         {
             string path = PathSelect.FOLDER_PATH;
 
-            List<FileModel> fileList = new List<FileModel>();
+            List<string> fileList = new List<string>();
 
             DirectoryInfo dir = new DirectoryInfo(path);
             foreach (var files in dir.GetFiles())
             {
-                fileList.Add(new FileModel
-                {
-                    FileName = files.Name,
-                    FullPath = files.FullName
-                });
+                fileList.Add(files.Name);
             }
 
             return fileList;
@@ -31,11 +27,17 @@ namespace WorkingWithFiles.Server.Service
         /// <summary>
         /// Удаление файла из папки
         /// </summary>
-        public void DeleteFile(FileModel file)
+        public void DeleteFile(string filename)
         {
-            if (File.Exists(file.FullPath))
+            string path = PathSelect.FOLDER_PATH;
+
+            path = path[^1] == '\\' ? path : path + '\\';
+
+            path += filename;
+
+            if (File.Exists(path))
             {
-                File.Delete(file.FullPath);
+                File.Delete(path);
             }
         }
 

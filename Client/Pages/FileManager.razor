@@ -12,7 +12,7 @@
 @using WorkingWithFiles.Shared.Model
 
 
-<MudTable Items="@Files" Hover="true" Filter="new Func<FileModel,bool>(FilterFunc)" MultiSelection="true" @bind-SelectedItems="selectedFiles">
+<MudTable Items="@Files" Hover="true" Filter="new Func<string,bool>(FilterFunc)" MultiSelection="true" @bind-SelectedItems="selectedFiles">
     <ToolBarContent>
         <MudText Typo="Typo.h6">Работа с файлами</MudText>
         <MudSpacer />
@@ -24,7 +24,7 @@
     </HeaderContent>
     <RowTemplate>
 
-        <MudTd DataLabel="FileName">@context.FileName</MudTd>
+        <MudTd DataLabel="FileName">@context</MudTd>
 
         <MudTd Class="d-flex justify-end">
             <MudButton OnClick="(() => DownloadFile(context))" Variant="Variant.Filled" StartIcon="@Icons.Filled.Download" Color="Color.Success" Size="Size.Small" Disabled="isDisabled">Скачать файл</MudButton>
@@ -53,7 +53,7 @@
         Выбранны файлы:
         @foreach (var file in selectedFiles)
         {
-            <span class="">@file.FileName @(new string("\t"))</span>
+            <span class="">@file @(new string("\t"))</span>
         }
     </MudText>
 </div>
@@ -62,9 +62,9 @@
     private bool isDisabled = false;
 
     private string searchString = string.Empty;
-    private HashSet<FileModel> selectedFiles = new HashSet<FileModel>();
+    private HashSet<string> selectedFiles = new HashSet<string>();
 
-    private IEnumerable<FileModel>? Files = new List<FileModel>();
+    private IEnumerable<string>? Files = new List<string>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -76,7 +76,7 @@
     /// </summary>
     private async Task LoadFiles()
     {
-        Files = await httpClient.GetFromJsonAsync<List<FileModel>>($"api/Quality/GetFiles");
+        Files = await httpClient.GetFromJsonAsync<List<string>>($"api/Quality/GetFiles");
 
         isDisabled = false;
     }
@@ -84,12 +84,12 @@
     /// <summary>
     /// Фильтр для поиска по таблице
     /// </summary>
-    private bool FilterFunc(FileModel file)
+    private bool FilterFunc(string? file)
     {
         if (string.IsNullOrWhiteSpace(searchString))
             return true;
 
-        if (file?.FileName?.Contains(searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+        if (file?.Contains(searchString, StringComparison.OrdinalIgnoreCase) ?? false)
             return true;
 
         return false;
@@ -110,9 +110,9 @@
         {
             isDisabled = true;
 
-            foreach (var file in selectedFiles)
+            foreach (var filename in selectedFiles)
             {
-                await httpClient.PostAsJsonAsync("api/Quality/DeleteFile", file);
+                await httpClient.PostAsJsonAsync<string>($"api/Quality/DeleteFile", filename);
             }
 
             selectedFiles.Clear();
@@ -194,8 +194,8 @@
     /// <summary>
     /// Открытие новой страницы для скачивания файла
     /// </summary>
-    private async Task DownloadFile(FileModel file)
+    private async Task DownloadFile(string filename)
     {
-        await JSRuntime.InvokeAsync<string>("open", $"api/Quality/DownloadFile/{EncryptionDecryptionData.EncodeDecrypt(file.FileName)}", "_blank");
+        await JSRuntime.InvokeAsync<string>("open", $"api/Quality/DownloadFile/{filename}", "_blank");
     }
 }

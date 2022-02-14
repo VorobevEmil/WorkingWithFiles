@@ -23,7 +23,7 @@ namespace WorkingWithFiles.Server.Controllers
         /// Получить все файлы
         /// </summary>
         [HttpGet("GetFiles")]
-        public ActionResult<List<FileModel>> GetFiles()
+        public ActionResult<List<string>> GetFiles()
         {
             return _service.GetFiles();
         }
@@ -33,11 +33,11 @@ namespace WorkingWithFiles.Server.Controllers
         /// Удалить файлы
         /// </summary>
         [HttpPost("DeleteFile")]
-        public IActionResult DeleteFile(FileModel file)
+        public IActionResult DeleteFile([FromBody] string filename)
         {
             try
             {
-                _service.DeleteFile(file);
+                _service.DeleteFile(filename);
                 return Ok("Файлы удаленны");
             }
             catch (Exception ex)
@@ -75,7 +75,7 @@ namespace WorkingWithFiles.Server.Controllers
             try
             {
                 var path = PathSelect.FOLDER_PATH[^1] == '\\' ? PathSelect.FOLDER_PATH : PathSelect.FOLDER_PATH + '\\';
-                path = path + EncryptionDecryptionData.EncodeDecrypt(filename);
+                path = path + filename;
 
                 var bytes = await System.IO.File.ReadAllBytesAsync(path);
                 return File(bytes, "text/plain", Path.GetFileName(path));
