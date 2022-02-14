@@ -8,9 +8,9 @@ namespace WorkingWithFiles.Server.Service
         /// <summary>
         /// Получить все файлы с папки
         /// </summary>
-        public List<FileModel> GetFiles(string path)
+        public List<FileModel> GetFiles()
         {
-            path = Cripto.EncodeDecrypt(path);
+            string path = PathSelect.FOLDER_PATH;
 
             List<FileModel> fileList = new List<FileModel>();
 
@@ -43,9 +43,9 @@ namespace WorkingWithFiles.Server.Service
         /// <summary>
         /// Загрузить файл в папку
         /// </summary>
-        public async Task<List<string?>> UploadFiles(string path, List<FileData> saveFile)
+        public async Task<List<string?>> UploadFiles(List<FileData> saveFile)
         {
-            path = Cripto.EncodeDecrypt(path);
+            string path = PathSelect.FOLDER_PATH;
 
             path = path[^1] == '\\' ? path : path + '\\';
 
@@ -53,15 +53,20 @@ namespace WorkingWithFiles.Server.Service
 
             foreach (var file in saveFile)
             {
-                if (File.Exists($"{path}{file.FileName}"))
+                var acceptFormat = new string[] { "application/msword", "application/vnd.ms-excel", "application/vnd.ms-powerpoint", "text/plain", "application/pdf" };
+                if (file.FileName.Split('.')[^1] == "docx" || file.ContentType.Split('/')[0] == "image" || acceptFormat.Contains(file.ContentType))
                 {
-                    fileExists.Add(file.FileName);
-                }
-                else
-                {
-                    using (var fileStream = File.Create($"{path}{file.FileName}"))
+
+                    if (File.Exists($"{path}{file.FileName}"))
                     {
-                        await fileStream.WriteAsync(file.Data);
+                        fileExists.Add(file.FileName);
+                    }
+                    else
+                    {
+                        using (var fileStream = File.Create($"{path}{file.FileName}"))
+                        {
+                            await fileStream.WriteAsync(file.Data);
+                        }
                     }
                 }
             }

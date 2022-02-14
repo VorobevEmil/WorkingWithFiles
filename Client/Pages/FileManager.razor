@@ -76,10 +76,7 @@
     /// </summary>
     private async Task LoadFiles()
     {
-        string path = PathSelect.FOLDER_PATH;
-        path = Cripto.EncodeDecrypt(path);
-
-        Files = await httpClient.GetFromJsonAsync<List<FileModel>>($"api/Quality/GetFiles/{path}");
+        Files = await httpClient.GetFromJsonAsync<List<FileModel>>($"api/Quality/GetFiles");
 
         isDisabled = false;
     }
@@ -150,7 +147,8 @@
                     fileData.Add(new FileData
                         {
                             Data = buffers,
-                            FileName = file.Name
+                            FileName = file.Name,
+                            ContentType = file.ContentType
                         });
                 }
                 else
@@ -184,10 +182,7 @@
         if (fileData.Count > 0)
         {
 
-            string path = PathSelect.FOLDER_PATH;
-            path = Cripto.EncodeDecrypt(path);
-
-            var response = await httpClient.PostAsJsonAsync($"api/Quality/UploadFiles/{path}", fileData);
+            var response = await httpClient.PostAsJsonAsync($"api/Quality/UploadFiles", fileData);
 
             if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
             {
@@ -201,7 +196,6 @@
     /// </summary>
     private async Task DownloadFile(FileModel file)
     {
-        string path = Cripto.EncodeDecrypt(file.FullPath);
-        await JSRuntime.InvokeAsync<string>("open", $"api/Quality/DownloadFile/{path}", "_blank");
+        await JSRuntime.InvokeAsync<string>("open", $"api/Quality/DownloadFile/{EncryptionDecryptionData.EncodeDecrypt(file.FileName)}", "_blank");
     }
 }

@@ -8,6 +8,6 @@ namespace WorkingWithFiles.Shared
 {
     public static class PathSelect
     {
-        public const string FOLDER_PATH = "Data";
+        public const string FOLDER_PATH = "Data/FilemanagerFiles";
     }
 }

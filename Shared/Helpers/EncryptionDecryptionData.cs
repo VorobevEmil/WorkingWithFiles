@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace WorkingWithFiles.Shared
 {
-    public class Cripto
+    public class EncryptionDecryptionData
     {
         // Метод шифрует и расшифровывает путь к файлу
         public static string EncodeDecrypt(string? str, ushort secretKey = 0x0088)

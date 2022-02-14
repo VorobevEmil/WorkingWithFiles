@@ -22,10 +22,10 @@ namespace WorkingWithFiles.Server.Controllers
         /// <summary>
         /// Получить все файлы
         /// </summary>
-        [HttpGet("GetFiles/{path}")]
-        public ActionResult<List<FileModel>> GetFiles(string path)
+        [HttpGet("GetFiles")]
+        public ActionResult<List<FileModel>> GetFiles()
         {
-            return _service.GetFiles(path);
+            return _service.GetFiles();
         }
 
 
@@ -52,10 +52,10 @@ namespace WorkingWithFiles.Server.Controllers
         /// </summary>
         [RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = int.MaxValue)]
         [DisableRequestSizeLimit]
-        [HttpPost("UploadFiles/{path}")]
-        public async Task<IActionResult> UploadFiles(string path, [FromBody] List<FileData> saveFile)
+        [HttpPost("UploadFiles")]
+        public async Task<IActionResult> UploadFiles([FromBody] List<FileData> saveFile)
         {
-            var fileExists = await _service.UploadFiles(path, saveFile);
+            var fileExists = await _service.UploadFiles(saveFile);
             if (fileExists.Count == 0)
             {
                 return Ok();
@@ -69,12 +69,13 @@ namespace WorkingWithFiles.Server.Controllers
         /// <summary>
         /// Скачать файл
         /// </summary>
-        [HttpGet("DownloadFile/{path}")]
-        public async Task<IActionResult> DownloadFile(string path)
+        [HttpGet("DownloadFile/{filename}")]
+        public async Task<IActionResult> DownloadFile(string filename)
         {
             try
             {
-                path = Cripto.EncodeDecrypt(path);
+                var path = PathSelect.FOLDER_PATH[^1] == '\\' ? PathSelect.FOLDER_PATH : PathSelect.FOLDER_PATH + '\\';
+                path = path + EncryptionDecryptionData.EncodeDecrypt(filename);
 
                 var bytes = await System.IO.File.ReadAllBytesAsync(path);
                 return File(bytes, "text/plain", Path.GetFileName(path));
